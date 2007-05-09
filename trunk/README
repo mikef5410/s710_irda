@@ -1,0 +1,78 @@
+This software provides Linux users with the ability to communicate with the
+Polar S710 heart rate monitor via the serial IR interface, native IR, and
+the USB interface (with the USB interface, the 's710d' utility is functional
+but the 's710sh' utility is not).
+
+If you wish to enable USB support, you need to have the libusb library
+(http://libusb.sf.net) installed, with version of at least 0.1.8.  libusb
+supports Linux, FreeBSD and Mac OS X.  This software, however, has only been
+tested on Linux.  The configure option for enabling USB is
+
+./configure --with-usb
+
+If you have a 2.6 (Linux) kernel, this should work.  If you have a 2.4 
+kernel, you will probably have to use USB bulk reads instead of 
+interrupt reads.  To do this, use
+
+./configure --with-usb --enable-usb-bulk-read
+
+If you're not sure which you should use, try building with and without
+USB bulk read enabled.  One of these should work.  So far, bulk read 
+works on 2.4 but not 2.6, and interrupt read works on 2.6 but not 2.4.
+
+USB support is disabled by default.
+
+You need to have the GD graphics library and header files installed in order
+to build this package.  There are various plotting functions which require GD.
+Your GD version must include the gdImagePng() function (i.e. gd 1.8 or later).
+Thus, you must also have libpng installed on your system (thanks to Jan-Frode 
+Myklebust (janfrode <at> parallab <dot> uib <dot> no) for pointing this out).
+
+Stefan Kleditzsch (kleditzsch <at> iwr <dot> uni-heidelberg <dot> de) decoded
+the CRC algorithm and has also figured out how to get native IR communication 
+working, for users who have that capability.
+
+The two main utilities, s710d and s710sh, now take a -d argument which 
+specifies the driver type to be used to communicate with the device.  Valid
+values are "serial", "ir", and "usb".  A device filename is required for
+-d values of "serial" and "ir", but not for "usb".  If no -d option is
+given, it is the same as -d serial.  Examples:
+
+s710d -d serial /dev/ttyS0
+s710d -d ir /dev/ttyS0
+s710d -d usb
+s710d /dev/ttyS0 (same as -d serial)
+
+YOU MUST HAVE WRITE PERMISSION TO THE DEVICE to use either s710d or s710sh 
+with it.  The easiest way to do this is to run the program as root.  Also,
+s710sh does not currently work with the USB interface.  This will be fixed
+relatively soon.
+
+A filtering function is provided which filters out invalid heart rate and
+cadence data.  The maximum "valid" values for heart rate and cadence may
+be set at configure time, for example:
+
+./configure --with-max-hr=210 --with-max-cad=160
+
+The default values can be found in configure.ac.
+
+The directory where downloaded workout files are stored is /var/polar/s710/raw
+by default.  It can be set at configure time using the --with-filedir option;
+for example:
+
+./configure --with-filedir=/home/dave/.s710/raw
+
+Robert Estes (estes <at> transmeta <dot> com) supplied a number of corrections
+to errors I had made in decoding parts of the file format.  He also decoded
+the lap speed and temperature values.
+
+Max Matveev (makc <at> sgi <dot> com) decoded a good deal more of the file 
+format, including average and max speed, OwnCal quantities, where the user ID
+and exercise name are stored, and more.
+
+Matti Tahvonen (matti <at> tahvonen <dot> com) introduced support for interval
+mode in the S625X, the S710, and the S720i.  This had been on the todo list
+for a long time.
+
+
+

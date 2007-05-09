@@ -1,0 +1,22 @@
+autoscan: warning: missing AC_PROG_INSTALL wanted by: 
+	Makefile.in:248
+	Makefile.in:281
+	Makefile.in:336
+	src/Makefile.in:229
+	src/Makefile.in:281
+	src/s710sh/Makefile.in:128
+	src/s710sh/Makefile.in:129
+	src/s710sh/Makefile.in:250
+	src/s710sh/Makefile.in:302
+	src/libs710/Makefile.in:237
+	src/libs710/Makefile.in:288
+	doc/Makefile.in:151
+	doc/Makefile.in:199
+	include/Makefile.in:199
+	include/Makefile.in:248
+	Makefile.in:46
+	src/Makefile.in:46
+	src/s710sh/Makefile.in:46
+	src/libs710/Makefile.in:46
+	doc/Makefile.in:46
+	include/Makefile.in:46

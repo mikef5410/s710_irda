@@ -1,0 +1,29 @@
+#!/bin/bash
+# $Id: polar_ir.user,v 1.1 2002/12/28 07:40:20 dave Exp $
+#
+# /etc/hotplug/usb/polar_ir
+#
+# Sets up newly plugged in Polar USB interface so that just one certain user
+
+USER=root
+
+# can access it from user space. (Replace root by the user you want
+# to have access to the device.)
+#
+# Note that for this script to work, you'll need all of the following:
+# a) a line in the file /etc/hotplug/usermap that corresponds to the 
+#    interface you are using (use the contents of polar_usb.usermap)
+# b) run s710sh/s710d as the user given above
+# c) a Linux kernel supporting hotplug and usbdevfs
+# d) the hotplug package (http://linux-hotplug.sourceforge.net/)
+#
+# In the usermap file, the first field "usb module" should be named 
+# "polar_ir" like this script.
+# 
+
+if [ "${ACTION}" = "add" ] && [ -f "${DEVICE}" ]
+then
+    chmod a-rwx "${DEVICE}"
+    chown "${USER}" "${DEVICE}"
+    chmod u+rw "${DEVICE}"
+fi

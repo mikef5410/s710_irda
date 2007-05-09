@@ -1,0 +1,97 @@
+
+A Guide to s710 on Mac OS X
+========================================================================
+
+contributed by Frank Vercruesse <frank at vercruesse dot de>
+------------------------------------------------------------------------
+
+
+A. Setup
+
+Before I dive into the problems, some remarks about the setup I use: I 
+own a Polar S720i and also the original Serial-IR-Interface. The latter 
+is connected to an USB-Serial-Adapter (Keyspan USA-19QW), which is in 
+turn connected to an active USB hub (Keyspan) that is eventually 
+plugged into one of the USB ports of my Apple Mac G5. The machine is 
+running Mac OS X v10.3.4 at present.
+
+Just in case you are wondering now why I chose the Serial-IR-Interface 
+at all: Macs do not have one of those ancient serial ports built-in. 
+But on the other hand the USB version of the Polar IR-Interface is 
+assumed to cause trouble according to some reports on the web. They 
+claim it's not fully compliant to the USB standard. So, I took the safe 
+route and went for the serial interface plus an adaptor.
+
+1. Build and Install the package
+
+To make the configure script happy, I had to set the LDFLAGS 
+environment variable to "-lz -liconv". Otherwise the tests for 
+png_create_read_struct or gdImagePng would fail due to undefined 
+symbols. I'm not really sure if this a problem with the configure 
+script, or rather that libpng or libgd were not properly built (by 
+darwinports) on my system. I tend to the latter as it seems strange to 
+me that libpng has a dependency on libz, but doesn't link against it 
+for any reason. Same applies to libgd which uses symbols from libiconv 
+but doesn't link against it too. Weird.
+
+Also, I was forced to adjust CPPFLAGS and CFLAGS to get configure and 
+make detect some headers and libraries, namely libgd and libpng. But I 
+think this particular adaption could be considered normal as they are 
+located at non-standard paths on my system.
+
+2. Inter-character timer
+
+The implementation of read_serial_byte() in serial.c is supposed to 
+read a single character from the serial interface, with a 100ms timeout 
+set in case there is no data available. The inter-character timer stuff 
+is done by setting the VTIME/VMIN control characters in 
+init_serial_port() to the appropriate values.
+
+Unfortunately, the code does not seem to be portable. I've noticed that 
+on Mac OS X the VTIME setting is not honored for any reason. Hence 
+read() is blocking forever, refusing to return if there is no data 
+waiting in the input queue. I have no idea why it does not work as 
+expected. I'm not a terminal programming expert at all. Perhaps it is 
+just a matter of switching a certain flag somewhere. Did not found any 
+hint in the respective man pages or header files though.
+
+Anyway, I went ahead and re-implemented the reading part using 
+select(). Now read_serial_byte() works like a charm. But I chose a 10ms 
+timeout in contrast to 100ms, because the Polar Precision Performance 
+Software on Windows is using such a small value as well according to 
+Portmon (serial port sniffer tool).
+
+Fixing the bidirectional communication code took me quite a while, 
+though the solution turned out to be very simple after all. Just sleep 
+for 10ms each time a byte is written out in send_packet().
+
+Hooray, the Mac and the watch can communicate with each other finally!
+
+3. Limitations & Bugs
+
+I noticed that the watch never responds to the very first request sent 
+to it. It takes at least two tries before the watch transmits an 
+answer. However, I saw the same behavior with the PPP Software on 
+Windows. Perhaps this is the way it is supposed to work. Once activated 
+the watch reacts to any packet sent to it as long as in connect mode.
+
+Tracked down a crashing bug in the s710sh utility. The map array in 
+main() is uninitialized, but subsequently it is assumed to be 
+zero-filled.
+
+
+I've attached the patch files for the modifications mentioned above. On 
+a related note, I also introduced a new configuration option 
+(--enable-serial-alt-inter-char-timer-imp) that enables the alternative 
+inter-character timer implementation if desired.
+
+Hope you will find my additions to the code useful. Looking forward to 
+the next release of the s710 software.
+
+
+Kind regards,
+
+Frank Vercruesse
+
+
+

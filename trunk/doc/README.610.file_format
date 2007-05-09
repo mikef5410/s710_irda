@@ -1,0 +1,183 @@
+Updated for S610i.... OK indicates consistent results with a number of test files.
+Other comments are present. (Alex Dick).
+
+
+
+Contributions have been made by Robert Estes (RRE) and Max Matveev (MM).
+
+I've tried to mark things we don't know as UNKNOWN - some things
+listed as 0 are probably also UNKNOWN.  U refers to the upper nibble
+(4 bits), L the lower nibble.  [RRE] 
+
+There are very few bytes left in the file format which we do not understand.
+The exercise file format, after being separated from the packets that carry
+it, is as follows:
+
+Byte	Meaning
+==============================================================================
+0 	Bytes in file (LSB)				OK
+1 	Bytes in file (MSB)				OK
+
+2	Exercise number (0 to 5) [MM]			OK	
+3	Exercise label (byte 0) [MM]			OK
+4	Exercise label (byte 1) [MM]			OK
+5	Exercise label (byte 2) [MM]			OK
+6	Exercise label (byte 3) [MM]			OK
+7	Exercise label (byte 4) [MM]			OK
+8	Exercise label (byte 5) [MM]			OK
+9	Exercise label (byte 6) [MM]			OK
+
+10	File date (seconds) (BCD)			OK
+11	File date (minutes) (BCD)			OK
+
+12	bit 7: 1 => PM, 0 => AM
+	bits 6-0: File date (hours)			OK
+
+13	bit 7 - UNKNOWN
+        bits 6-0: File date (day of month)		OK
+
+14	File date (year, offset from 2000)		OK
+
+15	L: File date (month, jan = 1)
+	U: Exercise duration (tenths of a second)	OK
+
+16	Exercise duration (seconds) (BCD)		OK
+17	Exercise duration (minutes) (BCD)		OK
+18	Exercise Duration (hours) (BCD)			OK
+
+19	Avg HR						OK
+20	Max HR						OK
+21	Laps in file
+22	Laps in file (sometimes duplicates byte 21)
+23	0						OK
+24	User ID (BCD, 0-99) [MM]			OK
+25	bit 1: Units (0 = metric, 1 = english)
+
+26	Recording interval (0 = 5s, 1 = 15s, 2 = 60s)	OK
+27	UNKNOWN - Sometimes 0, sometimes 16 sometimes 1.
+
+28	Limits 1 (Low)				OK
+29	Limits 1 (High)				OK
+30	Limits 2 (Low)				OK
+31	Limits 2 (High)				OK
+32	Limits 3 (Low)				OK
+33	Limits 3 (High)				OK
+
+34	0					OK
+35	UNKNOWN - 0 or 1			OK
+36	251					OK
+
+
+37	Below Zone 1, sec (BCD)			OK
+38	Below Zone 1, min (BCD)			OK
+39	Below Zone 1, hour (BCD)		OK
+40	Within Zone 1, sec (BCD)		OK
+41	Within Zone 1, min (BCD)		OK
+42	Within Zone 1, hour (BCD)		OK
+43	Above Zone 1, sec (BCD)			OK
+44	Above Zone 1, min (BCD)			OK
+45	Above Zone 1, hour (BCD)		OK
+
+46	Below Zone 2, sec (BCD)			OK
+47	Below Zone 2, min (BCD)			OK
+48	Below Zone 2, hour (BCD)		OK
+49	Within Zone 2, sec (BCD)		OK
+50	Within Zone 2, min (BCD)		OK
+51	Within Zone 2, hour (BCD)		OK
+52	Above Zone 2, sec (BCD)			OK
+53	Above Zone 2, min (BCD)			OK
+54	Above Zone 2, hour (BCD)		OK
+
+55	Below Zone 3, sec (BCD)			OK
+56	Below Zone 3, min (BCD)			OK
+57	Below Zone 3, hour (BCD)		OK
+58	Within Zone 3, sec (BCD)		OK
+59	Within Zone 3, min (BCD)		OK
+60	Within Zone 3, hour (BCD)		OK
+61	Above Zone 3, sec (BCD)			OK
+62	Above Zone 3, min (BCD)			OK
+63	Above Zone 3, hour (BCD)		OK
+
+64	UNKNOWN - 1 or 3			OK
+
+65	[U]: UNKNOWN (6)			
+  	[L]: Best lap tenths of a second (BCD)	OK - different from S170 ????
+66	Best lap seconds (BCD)			OK
+67	Best lap minutes (BCD)			OK
+68	Best lap hours (BCD)			OK
+
+69	Energy * 10 (BCD) (lower 2 digits)	OK
+70	Energy * 10 (BCD) (next higher 2 digits)OK
+71	Energy * 10 (BCD) (highest 2 digits)	OK
+
+        Energy = ((BCD(b69) + BCD(b70)*100 + BCD(b71)*10000)/10.0
+
+72	Total energy (BCD) (lower 2 digits)			OK
+73	Total energy (BCD) (next higher 2 digits)		OK
+74	Total energy (BCD) (highest 2 digits)			OK
+
+        Total energy = (BCD(b72) + BCD(b73)*100 + BCD(b74)*10000
+
+
+75	Cumulative workout time (hours) (BCD)			OK
+76	Cumulative workout time (hundreds of hours) (BCD)	OK
+77	Cumulative workout time (minutes) (BCD)			OK
+
+
+78	(start of lap data) - this is byte 0 of first lap.
+
+[78 + lap n offset] ttssssss					OK
+[79 + lap n offset] ttmmmmmm					OK
+[80 + lap n offset] hhhhhhhh					OK
+[81 + lap n offset] lap HR					OK
+[82 + lap n offset] avg HR for the lap				OK
+[83 + lap n offset] max HR for the lap				OK
+
+
+[Lap data]
+
+Bytes consumed by lap data depends on number of laps and bytes per lap.  For the S610 this is 6 Bytes per lap. It goes like this:
+
+Lap bytes 0, 1 and 2 is the timestamp at the end of the lap. 
+byte 2 is hours, bits 5-0 of byte 1 is minutes, bits 5-0 of byte 0 is seconds,
+bits 7-6 of bytes 0 and 1 are combined to get tenths.
+
+>From buffer 2 to 0 we have
+	
+   hhhhhhhh ttmmmmmm ttssssss
+
+where h = hours, m = minutes, s =seconds, t = tenths.
+
+tenths  = ((buf[offset+1] & 0xc0)>>4) | ((buf[offset] & 0xc0)>>6);
+
+
+
+
+Lap byte 3 is the lap HR
+Lap byte 4 is the avg HR for the lap
+Lap byte 5 is the max HR for the lap
+
+
+To read the lap data, read c bytes N times where N is the number of laps 
+recorded.
+
+
+[Sample data]
+
+Samples are stored in reverse order (the most recent sample occurs first).
+The number of bytes per sample varies from 1 to 9 depending on what is being
+recorded.  It goes like this:
+
+Sample byte 0: HR (bpm)
+
+
+The number of samples can be computed from either the exercise duration and
+recording interval or the sample size and total length of the sample buffer.
+
+The file ends after the sample data.  There is no trailer.
+
+The watch stores files in reverse order (the most recently recorded file is
+transmitted first).  The sum of the file sizes is equal to the "File bytes"
+value stored in payload bytes 1 and 2 of the watch's response to request 
+subtype 0x0b ("Get files").  The individual files are concatenated together
+to form a stream of bytes whose length is thus a known quantity.  

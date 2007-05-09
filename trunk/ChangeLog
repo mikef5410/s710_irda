@@ -1,0 +1,225 @@
+27 Mar 2007	Dave Bailey <dave at daveb dot net>
+
+	0.21 - minor bugfix
+
+	* srd2hrm fix for non-S710 HRM models.
+
+26 Feb 2007	Dave Bailey <dave at daveb dot net>
+
+	0.20 - bugfix, significant enhancements
+
+	* Matti Tahvonen provided a patch to handle files recorded with
+	  interval mode on the S625X.  This patch has also been applied
+	  to the S710/S720i code.  Matti also decoded a few more of the
+	  bytes of the file header that we did not yet understand, 
+	  including the byte that is set when interval mode is on.  The 
+	  last 21 bytes of the S625X header remain to be decoded.
+
+	* A bug that caused lap average speeds to be printed incorrectly
+	  with srdhead/srdcat has been fixed.
+
+	* A bug that wrote the "best lap split" data incorrectly in S610
+	  .srd file output has been fixed.
+
+	* The workout read/write/print code has been reorganized.  We
+	  had accumulated a lot of duplicated code (~1200 lines) that 
+	  has now been factored out.
+
+	* A 'test' directory has been added to the tarball, containing
+	  two files at present (one S625X and one S710).  I'd like to
+	  collect files from other Polar models in this directory, so
+	  we can have a way of ensuring that future changes don't break
+	  existing code.
+
+22 Dec 2004	Dave Bailey <dave at daveb dot net>
+
+	0.19 - significant enhancement
+
+	* Preliminary support for the S625X has been added.  The S625X
+	  .srd file has a 130 byte header (compared with the 109 byte 
+	  header of the S710/S720 and the 78 byte header of the S610).
+	  I'm not sure what these extra bytes are for, so for the time
+	  being, I'm simply ignoring them.  Lap and sample data appear
+	  to be decoded correctly now.
+
+23 Nov 2004	Dave Bailey <dave at daveb dot net>
+
+	0.18 - significant enhancement
+
+	* Added srdmerge, which permits users to merge .srd files and
+	  thereby concatenate consecutively recorded workouts.
+	
+12 Nov 2004	Dave Bailey <dave at daveb dot net>
+
+	0.17 - bugfix, significant enhancements
+
+	* Fix compile on gcc 3.4.2.
+	* Power data is correctly decoded now (thanks to Aldy Hernandez
+	  for supplying sample files).
+	* srdplot has been updated to generate graphs of power vs. time
+	  and distance, as well as power histogram and zone graphs.
+	* A new utility, srd2hrm, has been added.  This utility takes
+	  one argument (the filename of a .srd file) and prints the file
+	  to stdout in Polar's HRM format.
+	
+21 Sep 2004	Dave Bailey <dave at daveb dot net>
+
+	0.16 - major enhancement
+
+	* Support for S610, and automatic detection of HRM type 
+	  (S610 or S710/S720i) has been contributed by Markus
+	  Braun (see AUTHORS), based on Michael Karbach's (also
+	  see AUTHORS) work decoding the S610 file format.
+
+12 Aug 2004	Dave Bailey <dave at daveb dot net>
+
+	0.15 - enhancements
+
+	* incorporated another patch from Jani Averbach - computes
+	  average speed of lap, adds to srdcat output.  Also added
+	  a "VAM" column to output (average vertical velocity, in
+	  either meters or feet per hour).  Useful for estimating
+	  climbing speed (see www.53x12.com).
+	* incorporated a set of patches from Frank Vercruesse
+	  <frank at vercruesse dot de>:
+	    - support for s710sh on Mac OS/X (see doc/README.osx)
+	    - bugfix to s710sh
+	    - additional configure option to enable alternate
+	      serial inter-character timer mechanism for systems
+	      that don't respect VTIME (see doc/README.osx)
+	
+28 May 2004	Dave Bailey <dave at daveb dot net>
+
+	0.14 - quick fix
+
+	* added configuration option to enable USB bulk reads instead
+	  of interrupt reads (this should fix problems for people who
+	  were trying to use 0.13 on 2.6 kernels).
+
+19 May 2004	Dave Bailey <dave at daveb dot net>
+
+	0.13 - Bugfixes, some more significant changes
+
+	* libusb fix from Christian - use usb_interrupt_read instead of
+	  usb_bulk_read - to work with 2.6.x kernels.
+	* various patches from Jani Averbach: filenames saved in ISO
+	  8601 time format <http://www.cl.cam.ac.uk/~mgk25/iso-time.html>,
+	  print lap distances and ascents as incremental values, not 
+	  accumulated values, fix some compiler warnings on 64-bit
+	  platforms.
+	* patch from Berend Ozceri to enable AM/PM mode detection.
+	* added doc/README.file_format-S610 from Michael Karbach.
+	* added doc/README.610.file_format from Alex Dick.
+
+27 Dec 2002	Dave Bailey <dave at daveb dot net>
+
+	0.12 - Bugfixes
+	
+		* s710sh should work better with serial dongle now.
+		* Bug in detection of English/Metric units fixed (thanks to
+		  Stefan Saring for pointing this out).
+		* Cadence data should be decoded correctly now.
+		* Avg, Min, Max temperature are not BCD in Metric units.
+
+11 Oct 2002	Dave Bailey <dave at daveb dot net>
+
+	0.11 - Feature enhancements
+
+		* Bidirectional USB communication works now (s710sh -d usb).
+	
+10 Oct 2002	Dave Bailey <dave at daveb dot net>
+
+	0.10 - Major feature enhancements, more file format info
+
+		* From Max Matveev: bytes 3-9 of file format are the exercise
+		  name if exercise number is 1-5 (i.e. not Basic Use).  Also,
+		  user ID is BCD from 0 to 99 and is in byte 24 of the file.
+		* s710sh now lets you change watch settings, synchronize the
+		  watch to your computer's current time, and even reset the
+		  watch to the factory defaults if you want to.  Functions to
+		  do all of this have been made part of libs710.
+		* S710_FILEDIR can now be set at configure time using the
+		  --with-filedir configure option.
+		* Some USB debug statements have been added.
+	
+07 Oct 2002	Dave Bailey <dave at daveb dot net>
+
+	0.09 - More file format elucidation, minor bugfixes
+
+		* From Max Matveev: OwnCal quantities (energy, total energy);
+		  corrections to cumulative counters (odometer, total ride 
+		  time, total workout time); avg and max speed (finally!).
+		* From Robert Estes - Lap speed, distance, ascent, temperature.
+		* Plotting histograms works if HR data is all 0 now.
+		* From Max Matveev: portability fixes for non-GNU compilers.
+	
+27 Sep 2002	Dave Bailey <dave at daveb dot net>
+
+	0.08 - Bugfix
+
+		* workout.c was decoding Centigrade temperatures incorrectly.
+		  Thanks to Max Matveev for this patch.
+	
+26 Sep 2002	Dave Bailey <dave at daveb dot net>
+
+	0.07 - Minor bugfix
+		
+		* Fixed a segfault in filter.c when no cadence data is 
+		  present.
+
+21 Sep 2002	Dave Bailey <dave at daveb dot net>
+
+	0.06 - More big developments.
+
+		* The USB dongle is supported for s710d.  It does not yet
+		  work for s710sh, because I don't yet know how to send 
+		  packets over the USB interface.
+		* Cadence data has been fixed by Stefan Kleditzsch
+		* Filtering now filters invalid cadence data as well as
+		  heart rate data.  Maximum valid values are set at 
+		  configure time (./configure --help for more info).
+		* Rewrote a bunch of code in comm.c to ease addition of
+		  USB support.
+		* Native IR support is no longer set at configure time,
+	          it is always present.  Native IR is enabled via a 
+		  command line option to s710d/s710sh now.
+
+17 Sep 2002	Dave Bailey <dave at daveb dot net>
+
+	0.05 - Lots of changes.
+	
+		* Merged patches from Robert Estes regarding file format
+		  decoding errors.
+		* Moved filtering of HR data to a separate function so 
+		  that read_workout()/extract_workout() don't necessarily
+		  filter HR data (these functions now take a second argument
+		  which is either S710_FILTER_OFF [the default] or 
+		  S710_FILTER_ON).  Thanks to Robert Estes for suggesting
+		  this.
+		* Added explicit check for png library, as per suggestion
+		  of Jan-Frode Myklebust.
+		* Merged patches from Stefan Kleditzsch - CRC algorithm 
+		  has been decoded!  Native IR is also supported now, for
+		  computers which can do it.
+		* Added configure option for native IR:  --enable-native-ir.
+		* Added -f options to srdcat, srdhead, srdplot.  Using the
+		  -f option causes data files to be filtered as they are
+		  read.  The default is not to filter the data.
+		* Added set_user function to test changing watch settings.
+
+20 Aug 2002	Dave Bailey <dave at daveb dot net>
+
+	0.04 - made recv_byte make 10 attempts and print an error if it fails.
+
+18 Aug 2002	Dave Bailey <dave at daveb dot net>
+
+	0.03 - straightened out SI/English units.
+
+22 Jul 2002	Dave Bailey <dave at daveb dot net>
+
+	Version 0.02 - laps is BCD, minor graphing bugfixes.
+	
+17 Jun 2002	Dave Bailey <dave at daveb dot net>
+
+	Initial version.
+	

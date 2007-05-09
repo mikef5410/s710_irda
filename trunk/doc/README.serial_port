@@ -1,0 +1,9 @@
+The S710 serial IR interface operates at 9600 bps.  The flag bits in 
+the struct termios I use are:
+
+  t.c_cflag = B9600 | CS8 | CLOCAL | CREAD | CSTOPB;
+  t.c_iflag = IGNPAR;
+  t.c_oflag = 0;
+  t.c_lflag = 0;
+
+So there are 8 data bits, 2 stop bits, no parity.

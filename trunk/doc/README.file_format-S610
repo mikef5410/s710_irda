@@ -1,0 +1,168 @@
+Contributions have been made by Robert Estes (RRE) and Max Matveev (MM).
+
+I've tried to mark things we don't know as UNKNOWN - some things
+listed as 0 are probably also UNKNOWN.  U refers to the upper nibble
+(4 bits), L the lower nibble.  [RRE] 
+
+There are very few bytes left in the file format which we do not understand.
+The exercise file format, after being separated from the packets that carry
+it, is as follows:
+
+Byte	Meaning
+==============================================================================
+0 	Bytes in file (LSB)
+1 	Bytes in file (MSB)
+
+2	Exercise number (0 to 5) [MM]
+3	Exercise label (byte 0) [MM]
+4	Exercise label (byte 1) [MM]
+5	Exercise label (byte 2) [MM]
+6	Exercise label (byte 3) [MM]
+7	Exercise label (byte 4) [MM]
+8	Exercise label (byte 5) [MM]
+9	Exercise label (byte 6) [MM]
+
+10	File date (seconds) (BCD)
+11	File date (minutes) (BCD)
+
+12	bit 7: 1 => PM, 0 => AM
+	bits 6-0: File date (hours)
+
+13	bit 7 - UNKNOWN
+        bits 6-0: File date (day of month)
+
+14	File date (year, offset from 2000)
+
+15	L: File date (month, jan = 1)
+	U: Exercise duration (tenths of a second)
+
+16	Exercise duration (seconds) (BCD)
+17	Exercise duration (minutes) (BCD)
+18	Exercise Duration (hours) (BCD)
+
+19	Avg HR
+20	Max HR
+21	Laps in file
+22	Laps in file (duplicates byte 21)
+23	0
+24	User ID (BCD, 0-99) [MM]                     
+25 ??	112 in non basic use
+        0   in basic use
+
+26 	Recording interval (0 = 5s, 1 = 15s, 2 = 60s) 
+
+27	1 16
+
+28	Limits 1 (Low)
+29	Limits 1 (High)
+30	Limits 2 (Low)
+31	Limits 2 (High)
+32	Limits 3 (Low)
+33	Limits 3 (High)
+
+34	0
+35	UNKNOWN - 0 or 1
+36	251
+
+37	Below Zone 1, sec (BCD)
+38	Below Zone 1, min (BCD)
+39	Below Zone 1, hour (BCD)
+40	Within Zone 1, sec (BCD)
+41	Within Zone 1, min (BCD)
+42	Within Zone 1, hour (BCD)
+43	Above Zone 1, sec (BCD)
+44	Above Zone 1, min (BCD)
+45	Above Zone 1, hour (BCD)
+
+46	Below Zone 2, sec (BCD)
+47	Below Zone 2, min (BCD)
+48	Below Zone 2, hour (BCD)
+49	Within Zone 2, sec (BCD)
+50	Within Zone 2, min (BCD)
+51	Within Zone 2, hour (BCD)
+52	Above Zone 2, sec (BCD)
+53	Above Zone 2, min (BCD)
+54	Above Zone 2, hour (BCD)
+
+55	Below Zone 3, sec (BCD)
+56	Below Zone 3, min (BCD)
+57	Below Zone 3, hour (BCD)
+58	Within Zone 3, sec (BCD)
+59	Within Zone 3, min (BCD)
+60	Within Zone 3, hour (BCD)
+61	Above Zone 3, sec (BCD)
+62	Above Zone 3, min (BCD)
+63	Above Zone 3, hour (BCD)
+
+64	UNKNOWN - 1 or 2
+
+65	[U]: Best lap tenths of a second (BCD)
+	L - UNKNOWN
+66	Best lap seconds (BCD)
+67	Best lap minutes (BCD)
+68	Best lap hours (BCD)
+
+69	Energy * 10 (BCD) (lower 2 digits)
+70	Energy * 10 (BCD) (next higher 2 digits)
+71	Energy * 10 (BCD) (highest 2 digits)
+
+        Energy = ((BCD(b69) + BCD(b70)*100 + BCD(b71)*10000)/10.0
+
+72	Total energy (BCD) (lower 2 digits)
+73	Total energy (BCD) (next higher 2 digits)
+74	Total energy (BCD) (highest 2 digits)
+
+        Total energy = (BCD(b72) + BCD(b73)*100 + BCD(b74)*10000
+
+75	Cumulative workout time (hours) (BCD)
+76	Cumulative workout time (hundreds of hours) (BCD)
+77	Cumulative workout time (minutes) (BCD)
+
+78	(start of lap data) - this is byte 0 of first lap.
+
+[Lap data]
+
+Bytes consumed by lap data depends on number of laps and bytes per lap.  Bytes
+per lap depends on what is being recorded, and varies from 6 to 20.  It goes
+like this:
+
+Lap bytes 0, 1 and 2 is the timestamp at the end of the lap. 
+byte 2 is hours, bits 5-0 of byte 1 is minutes, bits 5-0 of byte 0 is seconds,
+bits 7-6 of bytes 0 and 1 are combined to get tenths.
+
+From buffer 2 to 0 we have
+	
+   hhhhhhhh ttmmmmmm ttssssss
+
+where h = hours, m = minutes, s =seconds, t = tenths.
+
+Lap byte 3 is the lap HR
+Lap byte 4 is the avg HR for the lap
+Lap byte 5 is the max HR for the lap
+
+c = 6
+
+To read the lap data, read c bytes N times where N is the number of laps 
+recorded.
+
+
+[Sample data]
+
+Samples are stored in reverse order (the most recent sample occurs first).
+The number of bytes per sample varies from 1 to 9 depending on what is being
+recorded.  It goes like this:
+
+Sample byte 0: HR (bpm)
+
+c = 1
+
+The number of samples can be computed from either the exercise duration and
+recording interval or the sample size and total length of the sample buffer.
+
+The file ends after the sample data.  There is no trailer.
+
+The watch stores files in reverse order (the most recently recorded file is
+transmitted first).  The sum of the file sizes is equal to the "File bytes"
+value stored in payload bytes 1 and 2 of the watch's response to request 
+subtype 0x0b ("Get files").  The individual files are concatenated together
+to form a stream of bytes whose length is thus a known quantity.  

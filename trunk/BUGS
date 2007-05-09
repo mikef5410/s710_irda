@@ -1,0 +1,72 @@
+This file lists known bugs and shortcomings in the s710 package as of 
+version 0.17 (11 Nov 2004).
+
+
+FILE FORMAT
+-----------
+
+The Polar HRM file format is not the same as what gets sent from the 
+watch to the computer over the serial port/IR port/USB port.  The HRM
+file format is used by the Polar software on Windows, and the raw 
+data from the watch is converted to HRM format for that purpose.  
+There are some parts of the raw data that we haven't been able to 
+decode yet.  For that reason (and for the sake of compactness), the
+s710 software saves files from the watch in "raw" format (i.e. it just
+saves the exact bytes that it receives).
+
+Users wishing to know more about the raw data format should consult
+doc/README.file_format for details.
+
+I've made some guesses based on the Polar HRM file format documenation,
+available http://developer.polar.fi/developer.nsf/main for download.
+
+The following bits of the s710 raw data (srd) file format are unknown
+as of 11 Nov 2004 (counting from the first byte, which is considered
+to be "Byte 0":
+
+Byte 23 - I've only seen this take a value of 0.
+Byte 25 - This byte is probably reserved for SMode flags, except for
+          bit 1, which determines the units.  Bits 0 and 2-7 are not
+          yet accounted for.
+          GUESS: bit 0 is set if air pressure is recorded.  The rest
+                 of the bits (2-7) are unused.  Air pressure isn't an
+                 option on S7xx models (to my knowledge, although I
+                 haven't seen the S725).
+Byte 26 - bits 0, 6 and 7 are not yet accounted for.
+          GUESS: bit 0 is HR/CC data (0 => HR only, 1 => HR + Cycling)
+                 bits 6 and 7 may hold flags that tell whether Power
+                 LR balance and Pedaling Index are being recorded.
+          NOTE: On the S610, this byte does not exist, and all of the
+                subsequent byte index values should be decremented by
+                one to get their S610 equivalent byte index values.
+Byte 28 - Sometimes 0, sometimes 16.
+Byte 35 - I've only seen this be 0.
+Byte 36 - I've seen this be 0 or 1.
+Byte 37 - Seems to be 251 in S710/S720i.
+Byte 65 - I've seen this be 1 or 3.
+Byte 66 - Lower nibble (lower 4 bits) not known.
+
+As far as I know, all of the bytes in the lap data and sample data are
+correctly decoded.
+
+
+PARSER
+------
+
+* The S710 parser probably has a bug when power data are recorded with
+either left-right balance or pedaling index data omitted.  This is
+because I don't know what bits of byte 26 (or byte 25) indicate the
+inclusion or omission of those data from the samples.  Users who record
+power data have two options:
+
+1) Record LR balance (LRB) and pedaling index (PI) in addition to power.
+2) Record a subset of LR balance and PI and email me the raw file and 
+   the watch settings.  With some back and forth, this can probably be
+   straightened out.
+
+If LRB or PI are not recorded, the sample size is probably smaller by
+one byte per unrecorded attribute.  Currently, the S710 parser always
+operates as if both LRB and PI are recorded (assuming power data are
+being recorded).  Again, this is most probably wrong.
+
+

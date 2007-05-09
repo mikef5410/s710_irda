@@ -1,0 +1,48 @@
+USB Communication protocol for Polar IR attachment
+--------------------------------------------------
+
+If you'd like to configure your Polar USB interface to work without root
+permissions, read this (contributed by Stefan Saring):
+
+  There's a special program called "hotplug" (can be found in most distros
+  or at http://linux-hotplug.sourceforge.net), which was made for such
+  problems.  When installed, it can call scripts every time a new USB device
+  is attached/removed.  For my problem I can easily allow all users or a
+  special group to read/write to the Polar device or to a camera.
+
+  For using this tool, the kernel needs to be compiled with hotplugging
+  support (can be found in general settings).
+
+Included in this directory are a USB usermap file suitable for use with the
+Polar IR interface and three hotplug scripts (choose the one you want to use).
+On my machine I have the contents of polar_usb.usermap in the file 
+/etc/hotplug/usb.usermap, and I have polar_ir.console copied to the file
+/etc/hotplug/usb/polar_ir.  This instructs hotplug to change the permissions
+of the USB device to make it readable and writable by whoever owns the 
+console.
+
+The Polar USB IR device configures a USB endpoint which is capable of interrupt
+transfers to the USB host.  Control transfers are, as for any USB device, also
+permitted.
+
+Requests are sent to the watch as control transfers.  The control transfer is
+as follows:
+
+bRequestType:	0x43
+bRequest:       0x01
+wValue:         0x0801
+wIndex:         0x0000
+wLength:        (length of packet)
+
+The data buffer for the control transfer is the serialized request packet (see
+README.protocol).  For example, a "Get overview" USB request data buffer has 
+length 0x07 (7 bytes) and looks like this:
+
+0xa3 0x15 0x00 0x00 0x05 0x37 0x90
+
+Note that the bytes are NOT scrambled via the recipe used for the serial/RS232
+IR interface.  
+
+Responses from the watch are received as normal interrupt transfers which can
+be read via USB bulk read.
+
