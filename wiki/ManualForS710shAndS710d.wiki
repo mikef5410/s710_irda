@@ -1,0 +1,138 @@
+#labels Featured
+#manual for s70sh and s710d
+
+=s710d=
+==Purpose== 
+s710d is a daemon. It sits on the designated port and waits for the watch to begin a transfer.
+s710d will stay alive until you kill it with -TERM or -INT. Dave made it this way so that you could just start it running and then forget about it.
+
+==Usage== 
+{{{>s710d [-d driver] [device file]}}}
+ `driver` may be either `serial`, `ir`, or `usb`
+
+ `device file` is required for serial and ir drivers.
+
+Just start the connect function of your S710.
+Push upper right button until "Connect" comes => press OK => Select "Select All" option => press OK
+Now it should download the exercises ...
+
+==Notes==
+Output may be changed by the enviromental variable "S710_FILEDIR"
+
+=s710sh=
+==Purpose== 
+s710h is an interactive command line program for getting and setting options.
+
+==Usage==
+{{{>s710sh [-d driver] [device file]}}}
+ `driver` may be either `serial`, `ir`, or `usb`
+
+ `device file` is required for serial and ir drivers.
+
+
+options:
+{{{
+get overview
+get user
+get watch
+get logo
+get bike
+get exercise 1
+get exercise 2
+get exercise 3
+get exercise 4
+get exercise 5
+get reminder 1
+get reminder 2
+get reminder 3
+get reminder 4
+get reminder 5
+get reminder 6
+get reminder 7
+get files
+close connection
+set user
+set watch
+set logo
+set bike
+set exercise 1
+set exercise 2
+set exercise 3
+set exercise 4
+set exercise 5
+set reminder 1
+set reminder 2
+set reminder 3
+set reminder 4
+set reminder 5
+set reminder 6
+set reminder 7
+hard reset
+synchronize time
+}}}
+
+Attributes and attribute types for "set user":
+
+{{{
+Attribute Value
+-------------------------------------------------------------
+user_id 0 to 99
+name Up to 7 characters
+gender "male" or "female"
+units "metric" or "english"
+recording_interval 5, 15 or 60
+activity_level "low", "medium", "high" or "top"
+birth_date.tm_year 1900 to 2155
+birth_date.tm_mon 1 to 12
+birth_date.tm_mday 1 to 31
+weight 0 to 255
+height 0 to 255
+vo2max 0 to 255
+max_hr 0 to 255
+altimeter boolean
+fitness_test boolean
+predict_hr_max boolean
+energy_expenditure boolean
+options_lock boolean
+help boolean
+activity_button_sound boolean
+heart_touch "show limits", "store lap" or "switch display"
+}}}
+
+Attributes and attribute types for "set exercise n":
+{{{
+Attribute Value
+-------------------------------------------------------------
+label Up to 7 characters
+timer[0].hours 0 to 23
+timer[0].minutes 0 to 59
+timer[1].hours 0 to 23
+timer[1].minutes 0 to 59
+timer[2].hours 0 to 23
+timer[2].minutes 0 to 59
+hr_limit[0].lower 0 to 255
+hr_limit[0].upper 0 to 255
+hr_limit[1].lower 0 to 255
+hr_limit[1].upper 0 to 255
+hr_limit[2].lower 0 to 255
+hr_limit[2].upper 0 to 255
+recovery_time.hours 0 to 99
+recovery_time.minutes 0 to 59
+recovery_hr 0 to 255
+}}}
+
+==Notes==
+Output may be changed by the enviromental variable "S710_FILEDIR"
+ 
+
+
+
+
+
+
+
+
+
+
+
+
