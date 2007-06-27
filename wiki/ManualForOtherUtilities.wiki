@@ -1,0 +1,54 @@
+#Manual for the SRD manipulations utilities
+
+=srdcat=
+==Purpose==
+Print the srd file in human readable format to stdout. Includes the exercise summary, a summary of each lap and individual sample data.
+==Usage==
+{{{srdcat [-f] SRD_file}}} 
+
+`-f` will turn on data filtering.
+==Notes==
+
+=srdhead=
+==Purpose== 
+Print the srd file in human readable format to stdout. Includes the exercise summary, a summary of each lap. Does not print individual sample data.
+==Usage==
+{{{srdhead [-f] SRD_file}}} 
+
+`-f` will turn on data filtering.
+==Notes==
+
+=srdplot=
+==Purpose== 
+srdplot creates a bunch of PNG plots of the workout data contained in an srd file.
+==Usage==
+{{{srdplot [-f] SRD_file}}}
+
+`-f` will turn on data filtering.
+==Notes==
+
+=srd2hrm=
+==Purpose== 
+srd2hrm converts srd format files to hrm (Polar) format
+==Usage==
+{{{srd2hrm [-f] SRD_file }}}
+
+`-f` will turn on data filtering.
+==Notes==
+Data dumps to stdout. Use file redirection "srd2hrm SRD_file >myhrmfile.hrm"
+
+=srdmerge=
+==Purpose== 
+srdmerge combines two srd files. It either does a "true" merge or a "concatenated" merge if the -c option is given.
+==Usage==
+{{{srdmerge [-c] [-f] <SRD file 1> <SRD file 2> <output SRD file name> }}}
+
+`-c` does a concatenated merge instead of a true merge. -f will turn on data filtering.
+==Notes==
+A true merge fills the time between the end of the first exercise and the start of the second with zeros. A concatenated merge starts the second exercise immediately after the first. srdmerge will decide which exercise is first by looking at the start times in the srd files.
+
+
+
+
+
+
