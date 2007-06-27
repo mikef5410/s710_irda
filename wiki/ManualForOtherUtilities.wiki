@@ -1,4 +1,4 @@
-Manual for the SRD manipulations utilities
+#summary Manual for the SRD files manipulation utilities
 
 =srdcat=
 ==Purpose==
@@ -46,7 +46,6 @@ srdmerge combines two srd files. It either does a "true" merge or a "concatenate
 `-c` does a concatenated merge instead of a true merge. -f will turn on data filtering.
 ==Notes==
 A true merge fills the time between the end of the first exercise and the start of the second with zeros. A concatenated merge starts the second exercise immediately after the first. srdmerge will decide which exercise is first by looking at the start times in the srd files.
-
 
 
 
