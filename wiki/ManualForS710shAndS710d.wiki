@@ -1,5 +1,5 @@
+#summary manual for s70sh and s710d
 #labels Featured
-#manual for s70sh and s710d
 
 =s710d=
 ==Purpose== 
@@ -124,7 +124,6 @@ recovery_hr 0 to 255
 ==Notes==
 Output may be changed by the enviromental variable "S710_FILEDIR"
  
-
 
 
 
