@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <termios.h>
 #include <sys/time.h>
+#include <sys/socket.h>
 #include "s710.h"
 #include "config.h"
 
@@ -19,7 +20,7 @@ static void send_byte         ( unsigned char   byte,  S710_Driver *d );
 static int  recv_byte         ( unsigned char  *byte,  S710_Driver *d );
 static int  recv_short        ( unsigned short *s,     S710_Driver *d );
 static unsigned short packet_checksum ( packet_t *packet );
-static int  serialize_packet  ( packet_t *p, unsigned char *buf );
+static int  serialize_packet  ( packet_t *p, unsigned char *buf, S710_Driver *d );
 
 
 /* send a packet via the S710 driver */
@@ -38,8 +39,12 @@ send_packet ( packet_t *packet, S710_Driver *d )
   
   /* next, serialize the packet into a stream of bytes */
 
-  bytes = serialize_packet ( packet, serialized );
-  
+  bytes = serialize_packet ( packet, serialized, d );
+
+  if ( d->type == S710_DRIVER_IRDA ) {
+    ret=send(d->sockfd, serialized, bytes, 0);
+    return(ret);
+  }
 
   if ( d->type == S710_DRIVER_USB ) {
     
@@ -83,7 +88,21 @@ recv_packet ( S710_Driver *d )
   size_t          siz;
   packet_t       *p = NULL;
   unsigned short  crc = 0;
+  char            rxbuf[1024];
 
+  if (d->type == S710_DRIVER_IRDA ) {
+    //Read from socket and fill the packet structure ...
+    memset(rxbuf, 0, 1024);
+    siz=recv(d->sockfd, rxbuf, 1024, 0);
+    p=(packet_t *)calloc(1, sizeof(packet_t) + siz);
+    p->type = S710_RESPONSE;
+    p->id = rxbuf[0];
+    // rxbuf[1] should always be zero
+    p->length = (rxbuf[3] * 256) + rxbuf[2];
+    memcpy((void *)p+4, (void *)rxbuf+4, siz-4);
+    return(p);
+  }
+  
   r = recv_byte ( &c, d );
   crc_process ( &crc, c );
 
@@ -219,20 +238,32 @@ packet_checksum ( packet_t *packet )
 
 
 static int
-serialize_packet ( packet_t *p, unsigned char *buf )
+serialize_packet ( packet_t *p, unsigned char *buf, S710_Driver *d )
 {
   unsigned short l = p->length + 5;
 
-  buf[0]   = p->type;
-  buf[1]   = p->id;
-  buf[2]   = 0;
-  buf[3]   = l >> 8;
-  buf[4]   = l & 0xff;
-  if ( p->length > 0 ) {
-    memcpy(&buf[5],p->data,p->length);
+  if (d->type == S710_DRIVER_IRDA) {
+    //IRDA Stack does a lot of the work for us.
+    l=p->length+4;
+    buf[0]=p->id;
+    buf[1]=0;
+    buf[2]=l >> 8;
+    buf[3]=l & 0xff;
+    if ( p->length > 0 ) {
+      memcpy(&buf[4],p->data,p->length);
+    }
+    return(l);
+  } else {
+    buf[0]   = p->type;
+    buf[1]   = p->id;
+    buf[2]   = 0;
+    buf[3]   = l >> 8;
+    buf[4]   = l & 0xff;
+    if ( p->length > 0 ) {
+      memcpy(&buf[5],p->data,p->length);
+    }
+    buf[l]   = p->checksum >> 8;
+    buf[l+1] = p->checksum & 0xff;
+    return l+2;
   }
-  buf[l]   = p->checksum >> 8;
-  buf[l+1] = p->checksum & 0xff;
-  
-  return l+2;
 }

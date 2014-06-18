@@ -67,7 +67,8 @@
 typedef enum {
   S710_DRIVER_SERIAL,
   S710_DRIVER_IR,
-  S710_DRIVER_USB
+  S710_DRIVER_USB,
+  S710_DRIVER_IRDA
 } S710_Driver_Type;
 
 typedef enum {
@@ -255,6 +256,8 @@ typedef enum {
 
 typedef struct S710_Driver {
   S710_Driver_Type  type;
+  int               sockfd; /* IRDA socket fd */
+  int               daddr;  /* IRDA dest addr */
   S710_Mode         mode;
   char              path[PATH_MAX];
   void             *data;
