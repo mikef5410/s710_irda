@@ -1,0 +1,4 @@
+This program is an s725 dumper that shows how to connect using the IRDA socket stack. It WILL NOT WORK with a dongle based on the STIR4200. Don't buy one of those. However, a "Gearmo" USB-IRDA adapter uses the MCS7780 and this appears to work well.
+
+Plug in the USB adapter, run "irattach irda0 -s" then start this program, and
+put the watch into IR mode. 
