@@ -16,7 +16,7 @@
          ;;Project top is where the .git dir is
          (top (find-git-dir) )
          ;; Where do we run gdb, cscope and make from?
-         (builddir (concat top ""))
+         (builddir (concat top "/trunk"))
          ;; Source dirs setup. They show up in ecb's browser in the listed order
          (sdirs (list "" ;; top dir
                       ))
