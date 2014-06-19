@@ -15,7 +15,7 @@
 
 
 static void   prep_hash_marks  ( FILE *fp );
-static void   print_hash_marks ( float pct, int bytes, FILE *fp );
+static void   print_hash_marks ( int current, int bytes, FILE *fp );
 static int    mkpath           ( char *path );
 
 
@@ -25,6 +25,7 @@ static int    mkpath           ( char *path );
    function, unfortunately, is error-prone because we don't have any good
    way to check integrity of the data.  
 */
+extern void hexDumpBuf(unsigned char *buf, int size);
 
 int
 get_files ( S710_Driver *d, files_t *files, FILE *fp )
@@ -36,6 +37,10 @@ get_files ( S710_Driver *d, files_t *files, FILE *fp )
   unsigned int   offset = 0;
   unsigned int   irdaMode = 0;
 
+  unsigned int packetCount=0;
+  unsigned int totalBytes=0;
+
+  
   if (d->type == S710_DRIVER_IRDA) irdaMode=1;
   
   /* send the first packet - S710_GET_FILES */
@@ -52,34 +57,43 @@ get_files ( S710_Driver *d, files_t *files, FILE *fp )
 
   if ( p != NULL ) ok = 1;
   else if ( fp != NULL ) fprintf(fp,"[error]");
-
+  
   while ( p != NULL ) {
-
+    packetCount++;
     /* handle this packet */
 
     p_remaining = irdaMode ? p->data[1] : p->data[0] & 0x7f;
     if ( p->data[0] & 0x80 ) {
       files->bytes = irdaMode ? ((p->data[2] << 8) + p->data[3]) : ((p->data[1] << 8) + p->data[2]);
-      fprintf(stderr,"File bytes = %d\n",files->bytes);
+      //fprintf(stderr,"File bytes = %d\n",files->bytes);
       start = irdaMode ? 6 : 5 ;
     } else {
       start = irdaMode ? 2 : 1;
     }
 
-    memcpy(&files->data[offset],&p->data[start],p->length - start);
-    offset += p->length - start;
+    if (p->length > start) {
+      memcpy(&files->data[offset],&p->data[start],p->length - start);
+      totalBytes += (p->length - start);
+      offset += (p->length - start);
+    }
     if ( fp != NULL && files->bytes > 0 ) 
-      print_hash_marks((float)offset/files->bytes,files->bytes,fp);
+      print_hash_marks(offset,files->bytes,fp);
 
     /* free this packet and get the next one */
 
-    free ( p );
-    p = get_response(S710_CONTINUE_TRANSFER,d);
+    if (p!=NULL) free ( p );
+    p=NULL;
+    if ( p_remaining ) {
+      p = get_response(S710_CONTINUE_TRANSFER,d);
+    }
   }
 
   if ( fp != NULL ) fprintf(fp,"\n\n");
   if ( p_remaining != 0 ) ok = 0;
 
+  //fprintf(stderr,"Got %d bytes in %d packets. Remaining=%d\n",totalBytes, packetCount, p_remaining);
+  //hexDumpBuf(&files->data[0], totalBytes);
+  
   return ok;
 }
 
@@ -92,7 +106,10 @@ receive_file ( S710_Driver *d, files_t *file, FILE *fp )
   int            p_remaining = 1;
   unsigned int   start;
   unsigned int   offset = 0;
+  unsigned int   irdaMode = 0;
 
+  if (d->type == S710_DRIVER_IRDA) irdaMode=1;
+  
   p = recv_packet(d);
   file->bytes = 0;
   file->cursor = 0;
@@ -103,23 +120,26 @@ receive_file ( S710_Driver *d, files_t *file, FILE *fp )
 
     /* handle this packet */
 
-    p_remaining = p->data[0] & 0x7f;
+    p_remaining = irdaMode ? p->data[1] : p->data[0] & 0x7f;
     if ( p->data[0] & 0x80 ) {
-      file->bytes = (p->data[1] << 8) + p->data[2];
-      start = 5;
+      file->bytes =irdaMode ? ((p->data[2] << 8) + p->data[3]) : ((p->data[1] << 8) + p->data[2]);
+      start = irdaMode ? 6 : 5;
     } else {
-      start = 1;
+      start = irdaMode ? 2 : 1;
     }
 
     memcpy(&file->data[offset],&p->data[start],p->length - start);
     offset += p->length - start;
     if ( fp != NULL && file->bytes > 0 ) 
-      print_hash_marks((float)offset/file->bytes,file->bytes,fp);
+      print_hash_marks(offset,file->bytes,fp);
 
     /* free this packet and get the next one */
 
-    free ( p );
-    p = recv_packet(d);
+    if (p!=NULL) free ( p );
+    p = NULL;
+    if (p_remaining) {
+      p = recv_packet(d);
+    }
   }
 
   if ( ok && fp != NULL ) fprintf(fp,"\n\n");
@@ -261,7 +281,7 @@ prep_hash_marks ( FILE *fp )
 {
   int i;
 
-  fprintf(fp,"[%5d bytes] [",0);
+  fprintf(fp,"[%5d/%5d bytes] [",0,0);
   for ( i = 0; i < HASH_MARKS; i++ )
     fputc(' ',fp);
   fprintf(fp,"] [%5.1f%%]",0.0);
@@ -269,14 +289,15 @@ prep_hash_marks ( FILE *fp )
 
 
 static void
-print_hash_marks ( float pct, int bytes, FILE *fp )
+print_hash_marks ( int offset, int bytes, FILE *fp )
 {
   float here;
   int   i;
-
-  for ( i = 0; i < HASH_MARKS+25; i++ )
+  float pct = (float) offset/bytes;
+  
+  for ( i = 0; i < HASH_MARKS+31; i++ )
     fputc('\b',fp);
-  fprintf(fp,"[%5d bytes] [",bytes);
+  fprintf(fp,"[%5d/%5d bytes] [",offset,bytes);
   for ( i = 0; i < HASH_MARKS; i++ ) {
     here = (float)i/HASH_MARKS;
     if ( here < pct ) fputc('#',fp);

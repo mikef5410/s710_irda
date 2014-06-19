@@ -43,8 +43,8 @@ send_packet ( packet_t *packet, S710_Driver *d )
   bytes = serialize_packet ( packet, serialized, d );
 
   if ( d->type == S710_DRIVER_IRDA ) {
-    printf("TX (%d bytes):\n", bytes);
-    hexDumpBuf(serialized, bytes);
+    //printf("TX (%d bytes):\n", bytes);
+    //hexDumpBuf(serialized, bytes);
     ret=send(d->sockfd, serialized, bytes, 0);
     return(ret);
   }
@@ -97,14 +97,17 @@ recv_packet ( S710_Driver *d )
     //Read from socket and fill the packet structure ...
     memset(rxbuf, 0, 1024);
     siz=recv(d->sockfd, rxbuf, 1024, 0);
-    printf("RX (%d bytes):\n", (int)siz);
-    hexDumpBuf(rxbuf,siz);
-    p=(packet_t *)calloc(1, sizeof(packet_t) + siz);
+    if (siz < 1) return(NULL);
+    //printf("RX (%d bytes):\n", (int)siz);
+    //hexDumpBuf(rxbuf,siz);
+    p=(packet_t *)calloc(1, sizeof(packet_t) + 1024 /*siz*/);
     p->type = S710_RESPONSE;
     p->id = rxbuf[0];
     // rxbuf[1] should always be zero
     p->length = siz-1;
-    memcpy(p->data, (void *)rxbuf+1, siz-1);
+    if (p->length) {
+      memcpy(p->data, (void *)rxbuf+1, siz-1);
+    }
     return(p);
   }
   
