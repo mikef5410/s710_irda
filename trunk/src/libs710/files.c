@@ -34,7 +34,10 @@ get_files ( S710_Driver *d, files_t *files, FILE *fp )
   int            p_remaining = 1;
   unsigned int   start;
   unsigned int   offset = 0;
+  unsigned int   irdaMode = 0;
 
+  if (d->type == S710_DRIVER_IRDA) irdaMode=1;
+  
   /* send the first packet - S710_GET_FILES */
 
   if ( fp != NULL ) {
@@ -54,13 +57,13 @@ get_files ( S710_Driver *d, files_t *files, FILE *fp )
 
     /* handle this packet */
 
-    p_remaining = p->data[0] & 0x7f;
+    p_remaining = irdaMode ? p->data[1] : p->data[0] & 0x7f;
     if ( p->data[0] & 0x80 ) {
-      files->bytes = (p->data[1] << 8) + p->data[2];
+      files->bytes = irdaMode ? ((p->data[2] << 8) + p->data[3]) : ((p->data[1] << 8) + p->data[2]);
       fprintf(stderr,"File bytes = %d\n",files->bytes);
-      start = 5;
+      start = irdaMode ? 6 : 5 ;
     } else {
-      start = 1;
+      start = irdaMode ? 2 : 1;
     }
 
     memcpy(&files->data[offset],&p->data[start],p->length - start);
