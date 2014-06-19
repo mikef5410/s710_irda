@@ -57,6 +57,7 @@ get_files ( S710_Driver *d, files_t *files, FILE *fp )
     p_remaining = p->data[0] & 0x7f;
     if ( p->data[0] & 0x80 ) {
       files->bytes = (p->data[1] << 8) + p->data[2];
+      fprintf(stderr,"File bytes = %d\n",files->bytes);
       start = 5;
     } else {
       start = 1;

@@ -13,6 +13,7 @@
 extern char *optarg;
 extern int   optind;
 
+int init_irda( S710_Driver *d, S710_Mode mode );
 
 int
 driver_init ( int argc, char **argv, S710_Driver *d )
@@ -30,6 +31,7 @@ driver_init ( int argc, char **argv, S710_Driver *d )
 	d->type = S710_DRIVER_SERIAL;
       } else if ( !strcmp(optarg,"irda") ) {
         d->type = S710_DRIVER_IRDA;
+        needpath = 0;
       } else if ( !strcmp(optarg,"ir") ) {
 	d->type = S710_DRIVER_IR;
       } else if ( !strcmp(optarg,"usb") ) {
@@ -168,8 +170,8 @@ int init_irda( S710_Driver *d, S710_Mode mode ) {
 
   if(connect(d->sockfd, (struct sockaddr *) &peer, sizeof(struct sockaddr_irda))) {
     perror("connect");
-    return(1);
+    return(0);
   }
   fprintf(stderr, "Connected!\n");
-  return(0);
+  return(1);
 }

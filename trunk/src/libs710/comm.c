@@ -7,6 +7,7 @@
 #include <termios.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+#include <ctype.h>
 #include "s710.h"
 #include "config.h"
 
@@ -21,7 +22,7 @@ static int  recv_byte         ( unsigned char  *byte,  S710_Driver *d );
 static int  recv_short        ( unsigned short *s,     S710_Driver *d );
 static unsigned short packet_checksum ( packet_t *packet );
 static int  serialize_packet  ( packet_t *p, unsigned char *buf, S710_Driver *d );
-
+void hexDumpBuf(unsigned char *buf, int size);
 
 /* send a packet via the S710 driver */
 
@@ -42,6 +43,8 @@ send_packet ( packet_t *packet, S710_Driver *d )
   bytes = serialize_packet ( packet, serialized, d );
 
   if ( d->type == S710_DRIVER_IRDA ) {
+    printf("TX (%d bytes):\n", bytes);
+    hexDumpBuf(serialized, bytes);
     ret=send(d->sockfd, serialized, bytes, 0);
     return(ret);
   }
@@ -88,18 +91,20 @@ recv_packet ( S710_Driver *d )
   size_t          siz;
   packet_t       *p = NULL;
   unsigned short  crc = 0;
-  char            rxbuf[1024];
+  unsigned char   rxbuf[1024];
 
   if (d->type == S710_DRIVER_IRDA ) {
     //Read from socket and fill the packet structure ...
     memset(rxbuf, 0, 1024);
     siz=recv(d->sockfd, rxbuf, 1024, 0);
+    printf("RX (%d bytes):\n", (int)siz);
+    hexDumpBuf(rxbuf,siz);
     p=(packet_t *)calloc(1, sizeof(packet_t) + siz);
     p->type = S710_RESPONSE;
     p->id = rxbuf[0];
     // rxbuf[1] should always be zero
-    p->length = (rxbuf[3] * 256) + rxbuf[2];
-    memcpy((void *)p+4, (void *)rxbuf+4, siz-4);
+    p->length = siz-1;
+    memcpy(p->data, (void *)rxbuf+1, siz-1);
     return(p);
   }
   
@@ -244,13 +249,13 @@ serialize_packet ( packet_t *p, unsigned char *buf, S710_Driver *d )
 
   if (d->type == S710_DRIVER_IRDA) {
     //IRDA Stack does a lot of the work for us.
-    l=p->length+4;
+    l=p->length+1;
     buf[0]=p->id;
-    buf[1]=0;
-    buf[2]=l >> 8;
-    buf[3]=l & 0xff;
+    //buf[1]=0;
+    //buf[2]=l >> 8;
+    //buf[3]=l & 0xff;
     if ( p->length > 0 ) {
-      memcpy(&buf[4],p->data,p->length);
+      memcpy(&buf[1],p->data,p->length);
     }
     return(l);
   } else {
@@ -266,4 +271,48 @@ serialize_packet ( packet_t *p, unsigned char *buf, S710_Driver *d )
     buf[l+1] = p->checksum & 0xff;
     return l+2;
   }
+}
+
+void hexDumpBuf(unsigned char *buf, int size)
+{
+  int row;
+  int col;
+  int j;
+  const int cols = 16;
+  char line[255];
+  char new[255];
+  
+  for (row = 0; row <= (size / cols); row++) {
+    memset(line, 0, 255);
+    line[0] = 0;
+    snprintf(line, 255, "%.4x  ", row * cols);
+    for (col = 0; col < cols; col++) {
+      if (row * cols + col >= size)
+	break;
+      snprintf(new, 255, "%s %.2x", line, buf[(row * cols) + col]);
+      strncpy(line,new,255);
+    }
+    if (col < cols) {		//line up the ascii decoded out for fractional line
+      for (j = 0; j < (cols - col); j++) {
+	snprintf(new, 255, "%s   ", line);
+        strncpy(line,new,255);
+      }
+    }
+    snprintf(new, 255, "%s   ", line);
+    strncpy(line,new,255);
+    for (col = 0; col < cols; col++) {
+      if (row * cols + col >= size)
+	break;
+      if (buf[(row * cols) + col] == ' '
+	  || isgraph(buf[(row * cols) + col])) {
+	snprintf(new, 255, "%s%c", line, buf[(row * cols) + col]);
+        strncpy(line,new,255);
+      } else {
+	snprintf(new, 255, "%s%c", line, '.');
+        strncpy(line,new,255);
+      }
+    }
+    printf("%s\r\n", line);
+  }
+  printf("\r\n");
 }
