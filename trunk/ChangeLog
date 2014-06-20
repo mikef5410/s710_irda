@@ -1,3 +1,8 @@
+19 Jun 2014   Mike Ferrara <mikef at mrf dot sonoma dot ca dot us>
+
+	0.21i - Add IRDA driver to support i models with a generic
+	        USB-IRDA dongle using linux IRDA stack
+
 27 Mar 2007	Dave Bailey <dave at daveb dot net>
 
 	0.21 - minor bugfix
