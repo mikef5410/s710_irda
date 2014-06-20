@@ -56,6 +56,10 @@ subtype, a 0 byte, and a 16-bit value identifying the length of the packet
 some sort of checksum.  (Update: 17 Sep 2002 - The trailer is indeed a 
 checksum.  Stefan Kleditzsch found it to be a CRC16 with polynomical 0x8005).
 
+2+) Packet protocol with IRDA is much simpler ... one byte of Id (command)
+followed by payload. Nothing else. The IRDA stack takes care of the rest for
+us. True for sets and gets.
+
 2a) Packets sent to the watch
 
 Packets sent from the computer to the watch always have a type of 0xa3 (163).  
@@ -159,8 +163,8 @@ Subtype 0x15: "Get overview" response: Length = 11 bytes (6 payload):
 -----------------------------------------------------------------------------
 Payload byte	Meaning
 =============================================================================
-0		? always 0x22
-1		? always 0x20
+0		? always 0x22  --- IRDA mode: 0x23 (protocol version?)
+1		? always 0x20  --- IRDA mode: 0x40 (protocol version?)
 2		Number of files stored
 3		? always 0x00
 4		Bytes of workout data (MSB)
@@ -366,6 +370,10 @@ Payload byte	Meaning
 3		? 0x22 (magic?)
 4		? 0x02 (magic?)
 5..n-1		File data (see README.file_format)
+
+IRDA mode: almost the same, except the "first packet" flag is an entire byte,
+Next byte is remaining packet count, and 0x22 and 0x02 are 0x23 and 0x40 (protocol
+versions?)  So the offset for data is 6 or 2 if it's a continuation.
 
 
 Subtype 0x16: "Continue transmission" response: Length = variable:

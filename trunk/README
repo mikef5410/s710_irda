@@ -75,4 +75,25 @@ mode in the S625X, the S710, and the S720i.  This had been on the todo list
 for a long time.
 
 
+++++++++ IRDA Version +++++++++++++++++
+
+On the IRDA branch in github are mods to support communicating with an S710i
+via the linux IRDA stack with a standard USB-IRDA dongle. I've tested this with
+and S710i and a "Gearmo" MCS7780 based USB-IRDA dongle.  After the dongle is
+plugged in type:
+
+"irattach irda0 -s"  I've setup my udev rules to do this for me.
+
+Next run "s710sh -d irda" and put the watch into comm mode. You should see a
+connection.
+
+At this point it should work like before.
+
+When in IRDA mode, it appears as though the watch uses a slightly different
+protocol for file transfers.  See the diffs in file.c. Also, framing,
+checksums, retrans, and all are now handled by the linux IRDA stack so
+sending/receiving packets is as simple as send/recv on a socket. A lot of stuff
+gets simpler as you'll see by reading "comm.c"
+
+
 

@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT(s710,0.21,dave@daveb.net)
+AC_INIT(s710,0.21i,dave@daveb.net)
 AC_CONFIG_SRCDIR(src/libs710/serial.c)
 AM_INIT_AUTOMAKE(1.6)
 AM_CONFIG_HEADER(include/config.h)

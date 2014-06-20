@@ -44,7 +44,7 @@ libs710_la_SOURCES = add_attr.c \
 # Interfaces removed => c+1:0:0
 
 libs710_la_LDFLAGS = \
-	-version-info 9:1:0
+	-version-info 10:0:1
 
 INCLUDES = -I$(top_srcdir)/include
 CFLAGS   = @CFLAGS@ $(USB_CFLAGS) -Wall
