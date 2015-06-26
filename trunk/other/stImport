@@ -1,0 +1,180 @@
+#!/usr/bin/perl
+#
+#
+# Incremental import of Polar S710 .srd files
+# into SportsTracker exercises.xml
+#
+# Mike Ferrara, 06/2015
+
+use strict;
+use warnings;
+use File::Find;
+
+our $exfile  = "/var/polar/sportstracker/exercises.xml";
+our $polar   = "/var/polar/s710/raw";
+our $srdhead = "/usr/local/bin/srdhead";
+
+#Exercise file expects metric data; my data's imperial
+our $mi2km = 1.609344;
+our $ft2m  = 0.3048;
+
+our %seen = ();
+
+#First let's build a hash of the srd files we've seen so far
+
+our $xml = "";
+
+my $maxId = 0;
+my $EX;
+open( $EX, "<", $exfile );
+
+while (<$EX>) {
+  chomp;
+  chomp;
+  if (/<hrm-file>/) {
+    s|</?hrm-file>||g;
+    my $fname = trimwhite($_);
+    $seen{$fname} = 1;
+    print( $fname, "\n" );
+  }
+  if (/<id>/) {
+    s|</?id>||g;
+    my $id = trimwhite($_) + 0;
+    $maxId = ( $id > $maxId ) ? $id : $maxId;
+  }
+}
+close($EX);
+
+printf( "Next ID is %d\n", $maxId++ );
+
+#Read the srd files ....
+find( \&processFile, ($polar) );
+
+sub processFile {
+  my $fname   = shift;
+  my $dirname = $File::Find::dir;
+  my $path    = $File::Find::name;
+
+  return if ( !-f $path );
+  return if ( !( $path =~ /\.srd$/ ) );
+  if ( $seen{$path} ) {
+    print "Already seen $path\n";
+    return;
+  }
+  print "Importing ... $path\n";
+  $xml .= import( $path, $maxId++ );
+  if ( !length($xml) ) { $maxId--; }
+}
+
+#Now add the data to the exercise file
+open( $EX, "+<", $exfile );
+my $lastPos = 0;
+while (<$EX>) {
+  last if ( $_ =~ m|</exercise-list>| );
+  $lastPos = tell($EX);
+}
+seek( $EX, $lastPos, 0 );
+print( $EX $xml );
+print( $EX "</exercise-list>\n" );
+
+sub trimwhite {
+  my $arg = shift;
+
+  $arg =~ s/^[ \t]+//;
+  $arg =~ s/[ \t]+$//;
+  return ($arg);
+}
+
+sub round {
+  my $arg = shift;
+
+  return ( int( $arg + 0.5 ) );
+}
+
+sub import {
+  my $path = shift;
+  my $id   = shift;
+
+  my $out = "<exercise>\n";
+  $out .= sprintf( "<id>%d</id>\n", $id );
+  $out .= sprintf(
+    "<sport-type-id>1</sport-type-id>\n<sport-subtype-id>1</sport-subtype-id>\n"
+  );
+
+  my $date;
+  my $duration;
+  my $dist;
+  my $speed;
+  my $hr;
+  my $ascent;
+  my $cal;
+
+  open( R, "$srdhead $path|" );
+  while (<R>) {
+    chomp;
+    chomp;
+    $_ = trimwhite($_);
+    next if (/^$/);
+    s/[ \t]+/ /g;
+
+    my $pos = index( $_, ":" );
+    my $fname = substr( $_, 0, $pos );
+    my $val = substr( $_, $pos + 1 );
+
+    if ( $fname eq "Workout date" ) {
+      my ( $d, $t, @rest ) = split( " ", $val );
+      $date = sprintf( "<date>%sT%s</date>\n", $d, $t );
+      next;
+    }
+
+    if ( $fname eq "Exercise duration" ) {
+      my ( $h, $m, $s ) = split( ":", $val );
+      my $secs = round( ( $h * 3600 ) + ( $m * 60 ) + $s );
+      $duration = sprintf( "<duration>%d</duration>\n", $secs );
+      next;
+    }
+
+    if ( $fname eq "Exercise distance" ) {
+      my ( $d, $u ) = split( " ", $val );
+      $dist = sprintf( "<distance>%g</distance>\n", $d * $mi2km );
+    }
+
+    if ( $fname eq "Average speed" ) {
+      my ( $s, $u ) = split( " ", $val );
+      $speed = sprintf( "<avg-speed>%g</avg-speed>\n", $s * $mi2km );
+    }
+
+    if ( $fname eq "Average heart rate" ) {
+      my ( $r, $u ) = split( " ", $val );
+      $hr = sprintf( "<avg-heartrate>%d</avg-heartrate>\n", $r );
+    }
+
+    if ( $fname eq "Ascent" ) {
+      my ( $a, $u ) = split( " ", $val );
+      $ascent = sprintf( "<ascent>%g</ascent>\n", round( $a * $ft2m ) );
+    }
+
+    if ( $fname eq "Energy" ) {
+      $cal = sprintf( "<calories>%g</calories>\n", $val );
+    }
+  }
+
+  if ( !length($date) || !length($duration) || !length($dist) ) {
+    printf("BAD File: $path\n");
+    return ("");
+  }
+
+  $out .=
+      $date
+    . $duration
+    . "<intensity>NORMAL</intensity>\n"
+    . $dist
+    . $speed
+    . $hr
+    . $ascent
+    . $cal;
+  $out .= sprintf( "<hrm-file>%s</hrm-file>\n<equipment-id>1</equipment-id>\n",
+    $path );
+  $out .= "</exercise>\n";
+  return ($out);
+}
